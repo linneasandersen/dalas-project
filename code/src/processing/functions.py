@@ -1,4 +1,4 @@
 
 
-def filter_data(df, column, value):
-    return df[df[column] == value]
+def filter_data(df, column, values):
+    return df[df[column].isin(values)]

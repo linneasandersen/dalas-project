@@ -2,10 +2,10 @@ import pandas as pd
 from pathlib import Path
 from src.config import RAW_DIR
 import os
-from kagglehub import kagglehub
 
 def fetch_countries():
     # Countries from kaggle
+    from kagglehub import kagglehub
 
     path = kagglehub.dataset_download("emolodov/country-codes-alpha2-alpha3")
 

@@ -1,0 +1,4 @@
+HS2,Year,Offset,Status,Details
+210,2010,0,EXCEPTION,HTTPSConnectionPool(host='api-v2.oec.world', port=443): Max retries exceeded with url: /tesseract/data.jsonrecords?cube=trade_i_baci_a_92&drilldowns=HS2%2CExporter+Country%2CImporter+Country%2CYear&measures=Trade+Value&include=HS2%3A210%3BYear%3A2010&limit=100%2C0 (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+210,2010,0,SKIPPED_BATCH,Max Retries/Error
+210,2010,100,EXCEPTION,HTTPSConnectionPool(host='api-v2.oec.world', port=443): Read timed out. (read timeout=60)

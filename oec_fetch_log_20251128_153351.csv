@@ -1,0 +1,3 @@
+HS2,Year,Offset,Status
+210,2010,0,Exception: HTTPSConnectionPool(host='api-v2.oec.world', port=443): Read timed out. (read timeout=60)
+210,2010,0,HTTP 503

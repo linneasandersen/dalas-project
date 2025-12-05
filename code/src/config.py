@@ -17,6 +17,7 @@ LOCAL_DIR = Path(__file__).parent.parent.parent.parent / "dalas-data"
 
 RAW_DIR_EN = GOOGLE_DRIVE_EN / "raw"
 PROCESSED_DIR_EN = GOOGLE_DRIVE_EN / "processed"
+MERGED_DIR = PROCESSED_DIR / "merged"
 
 YEARS = range(2010, 2024)
 HS2_CODES = [10, 12, 15, 26, 27, 29, 31, 39, 71, 72, 73, 75, 76, 81, 84, 85, 87, 88, 90]
@@ -59,4 +60,13 @@ COUNTRIES = [
     "Bulgaria",
     "Singapore"
 ]
-#COUNTRIES = ["Russia", "Thailand"]
+
+
+COUNTRIES_ALT = {
+    "Korea, Rep.": "South Korea",
+    "Egypt, Arab Rep.": "Egypt",
+    "Kyrgyz Republic": "Kyrgyzstan",
+    "Turkiye": "Turkey",
+    "Russian Federation": "Russia",
+    "Slovak Republic": "Slovakia"
+}

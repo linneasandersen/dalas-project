@@ -1,0 +1,58 @@
+import pandas as pd
+from src.config import GOOGLE_DRIVE
+from src.processing.clean import clean_all
+from src.processing.pipelines import process_dataframe
+
+# ---------------------------------------------------
+# Generic helper
+# ---------------------------------------------------
+
+def load_csv_pipeline(path, dataset_name, **read_kwargs):
+    df = pd.read_csv(path, **read_kwargs)
+    df = clean_all([df])[0]
+    df = process_dataframe(dataset_name, df)
+    return df
+
+# ---------------------------------------------------
+# Specific loaders
+# ---------------------------------------------------
+
+def load_forest_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "processed" / "FAO_forest_data.csv",
+        "fao_forest"
+    )
+
+def load_production_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "processed" / "FAO_prod_data.csv",
+        "fao_production",
+        index_col=0
+    )
+
+def load_temp_change_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "processed" / "FAO_env_data.csv",
+        "fao_temp_change"
+    )
+
+def load_gdp():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "Country_GDP.csv",
+        "gdp",
+        skiprows=4
+    )
+
+def load_land_area():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "Country_Land_Area.csv",
+        "land",
+        skiprows=4
+    )
+
+def load_population_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "Country_Population.csv",
+        "population",
+        skiprows=4
+    )

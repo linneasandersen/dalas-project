@@ -1,5 +1,4 @@
 import pandas as pd
-from src.eda.missing_data import interpolate_logistics_index
 from src.config import YEARS, GOOGLE_DRIVE, MERGED_DIR, COUNTRIES_REGIONS
 from src.processing.clean import clean_all
 from src.processing.hs import update_config
@@ -14,6 +13,7 @@ from src.fetch.oec import (
 from src.fetch.fao import fetch_FAO
 from src.utils.io import save_df
 
+from src.data.postprocessing import interpolate_logistics_index
 
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error

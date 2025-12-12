@@ -1,4 +1,5 @@
 import pandas as pd
+from src.eda.missing_data import interpolate_logistics_index
 from src.config import YEARS, GOOGLE_DRIVE, MERGED_DIR, COUNTRIES_REGIONS
 from src.processing.clean import clean_all
 from src.processing.hs import update_config
@@ -13,6 +14,7 @@ from src.fetch.oec import (
 from src.fetch.fao import fetch_FAO
 from src.utils.io import save_df
 
+
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import numpy as np
@@ -22,27 +24,37 @@ from sklearn.compose import TransformedTargetRegressor
 
 from src.data.loaders import (
     load_forest_data,
+    load_logistics_index_data,
     load_production_data,
     load_temp_change_data,
     load_gdp,
     load_land_area,
     load_population_data,
+    load_lat_long_data,
+    load_rta_data
 )
 
 from src.data.mergers import (
     merge_gdp,
+    merge_logistics_index,
     merge_temp_change,
     merge_fao_hs2cpc,
     merge_land,
-    merge_population
+    merge_population,
+    merge_lat_long,
+    merge_rta,
 )
 
 from src.data.features import (
     encode_hs2,
+    feature_distance_from_lat_long,
+    feature_trade_per_gdp,
     panel_train_val_test_split,
     rolling_panel_split,
     engineer_lagged_features,
-    feature_regions_from_countries
+    feature_regions_from_countries,
+    feature_product_category,
+    feature_gdp_per_capita
 )
 
 from src.models.baseline import baseline_model_OLS
@@ -131,7 +143,11 @@ PIPELINE_CONFIG = {
     "load_gdp": False,
     "load_land": False,
     "load_pop": False,
+    "load_lat_long": False,
     "load_temp_change": False,
+    "load_rta": False,
+    "load_logistics_index": False,
+    #"load_lang": True,
     "build_oec_by_year": False,
     "load_combined_oec": False,
     "hs2cpc_mapping": False,
@@ -139,10 +155,20 @@ PIPELINE_CONFIG = {
     "merge_temp_change": False,
     "merge_gdp": False,
     "merge_land": False,
-    "merge_pop": True,
-    "engineer_features": False,
+    "merge_pop": False,
+    "merge_lat_long": False,
+    "merge_logistics_index": False,
+    "merge_rta": False,
+    #"merge_lang": False,
+    "engineer_features_regions": False,
+    "engineer_features_distance_prodcat_gdppercap": False,
+    "engineer_features_trade_per_gdp": False,
     "engineer_lagged_features": False,
     "train_baseline": False,
+    "rename_columns": False,
+    "interpolate_logistics_index": False,
+    "explore_latest_data": True
+
 }
 
 # ---------------------------------------------------
@@ -151,6 +177,29 @@ PIPELINE_CONFIG = {
 
 def main():
     processed_dir = GOOGLE_DRIVE / "processed"
+    if PIPELINE_CONFIG["explore_latest_data"]:
+        df = load_merged_data(load_latest=True)  # test loading latest merged data
+        # export to CSV for external exploration
+        # explore missing values in temp change columns either in exporter or importer
+        df_missing_temp = df[df['importer_temp_change_c'].isnull()][['exporter_name', 'importer_name', 'year', 'exporter_temp_change_c', 'importer_temp_change_c']]
+        df_missing_temp.to_csv(MERGED_DIR / "missing" / "latest_merged_data_missing_temp_change_importer.csv", index=False)
+        df_missing_temp = df[df['exporter_temp_change_c'].isnull()][['exporter_name', 'importer_name', 'year', 'exporter_temp_change_c', 'importer_temp_change_c']]
+        df_missing_temp.to_csv(MERGED_DIR / "missing" / "latest_merged_data_missing_temp_change_exporter.csv", index=False)
+        #print("Latest merged data with missing values saved to CSV.")
+        #print(df[df['exporter_logistics_index'].isnull()][['exporter_name', 'importer_name', 'year', 'exporter_logistics_index', 'importer_logistics_index']].to_string())
+        
+        #print(df.describe(include='all'))
+        print(df.info())
+
+
+    if PIPELINE_CONFIG["interpolate_logistics_index"]:
+        df = load_merged_data(load_latest=True)
+        print("Before interpolation:")
+        print(df.info())
+        df_interpolated = interpolate_logistics_index(df)
+        print("After interpolation:")
+        print(df_interpolated.info())
+        save_df(df_interpolated, "oec_data_all_features_renamed_interpolated_logistics", MERGED_DIR)
 
     if PIPELINE_CONFIG["build_hs"]:
         hs = build_hs_dataset()
@@ -179,11 +228,23 @@ def main():
     if PIPELINE_CONFIG["load_pop"]:
         pop = load_population_data()
         print(pop.head())
+
+    if PIPELINE_CONFIG["load_lat_long"]:
+        lat_long = load_lat_long_data()
+        print(lat_long.head())
     
     if PIPELINE_CONFIG["load_temp_change"]:
         temp_change = load_temp_change_data()
         print(temp_change.head())
 
+    if PIPELINE_CONFIG["load_logistics_index"]:
+        logistics_index = load_logistics_index_data()
+        print(logistics_index.head())
+
+    if PIPELINE_CONFIG["load_rta"]:
+        rta = load_rta_data()
+        print(rta.head())
+        
     if PIPELINE_CONFIG["build_oec_by_year"]:
         oec_all = build_oec_for_years(YEARS, processed_dir)
         print(oec_all.head())
@@ -247,7 +308,41 @@ def main():
         print(merged_df.head().to_string()) 
         print(merged_df.columns)
 
-    if PIPELINE_CONFIG["engineer_features"]:
+    if PIPELINE_CONFIG["merge_lat_long"]:
+        oec_all = load_merged_data(load_latest=True)
+        print("OEC data:")
+        print(oec_all.head())
+        lat_long = load_lat_long_data()
+        merged_df = merge_lat_long(oec_all, lat_long)
+        save_df(merged_df, "oec_trade_temp_change_gdp_regions_land_pop_latlong", MERGED_DIR)
+        print("Merged data with lat/long:")
+        #print(merged_df.head().to_string()) 
+        print(merged_df.columns)
+        print(merged_df[['exporter_name', 'exporter_latitude', 'exporter_longitude', 'importer_name', 'importer_latitude', 'importer_longitude']].head().to_string())
+        
+    if PIPELINE_CONFIG["merge_logistics_index"]:
+        oec_all = load_merged_data(load_latest=True)
+        print("OEC data:")
+        print(oec_all.head())
+        logistics_index = load_logistics_index_data()
+        merged_df = merge_logistics_index(oec_all, logistics_index)
+        save_df(merged_df, "oec_data_all_features_renamed", MERGED_DIR)
+        print("Merged data with logistics index:")
+        print(merged_df.columns)
+        print(merged_df[['exporter_name', 'exporter_logistics_index', 'importer_name', 'importer_logistics_index']].head().to_string())
+
+    if PIPELINE_CONFIG["merge_rta"]:
+        oec_all = load_merged_data(load_latest=True)
+        print("OEC data:")
+        print(oec_all.head())
+        rta = load_rta_data()
+        merged_df = merge_rta(oec_all, rta)
+        save_df(merged_df, "oec_trade_temp_change_gdp_land_pop_latlong_logistics_rta_with_features_renamed_test", MERGED_DIR)
+        print("Merged data with logistics index:")
+        print(merged_df.columns)
+
+
+    if PIPELINE_CONFIG["engineer_features_regions"]:
         df = load_merged_data(load_latest=True)
         print(df.columns)
         merged_df_regions = feature_regions_from_countries(df, 'exporter_name', COUNTRIES_REGIONS, 'exporter_region')
@@ -255,6 +350,30 @@ def main():
         print(merged_df_regions.head().to_string()) 
         print(merged_df_regions.columns)
         save_df(merged_df_regions, "oec_trade_temp_change_gdp_regions", MERGED_DIR)
+
+    if PIPELINE_CONFIG["engineer_features_distance_prodcat_gdppercap"]:
+        df = load_merged_data(load_latest=True)
+        feature_df = feature_distance_from_lat_long(df)
+        feature_df = feature_product_category(feature_df)
+        feature_df = feature_gdp_per_capita(feature_df)
+        print(feature_df.head().to_string()) 
+        print(feature_df.columns)
+        save_df(feature_df, "oec_trade_temp_change_gdp_regions_land_pop_latlong_distance", MERGED_DIR)
+
+    if PIPELINE_CONFIG["engineer_features_trade_per_gdp"]:
+        df = load_merged_data(load_latest=True)
+        feature_df = feature_trade_per_gdp(df)
+        print(feature_df.head().to_string()) 
+        print(feature_df.columns)
+        save_df(feature_df, "oec_trade_temp_change_gdp_land_pop_latlong_logistics_with_features_renamed", MERGED_DIR)
+
+    if PIPELINE_CONFIG["rename_columns"]:
+        from src.data.postprocessing import rename_columns_with_units
+        df = load_merged_data(load_latest=True)
+        renamed_df = rename_columns_with_units(df)
+        print(renamed_df.head().to_string()) 
+        print(renamed_df.columns)
+        save_df(renamed_df, "oec_trade_temp_change_gdp_land_pop_latlong_logistics_with_features_renamed", MERGED_DIR)
 
     if PIPELINE_CONFIG["engineer_lagged_features"]:
         merged_df = load_merged_data()

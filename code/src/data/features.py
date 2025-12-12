@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from src.config import PRODUCT_CATEGORIES
 
 
 # ---------------------------------------------------
@@ -76,4 +77,29 @@ def engineer_lagged_features(df, group_cols, time_col='year', feature_cols=['val
 
 def feature_regions_from_countries(df, country_col='country name', region_map={}, column_name='region'):
     df[column_name] = df[country_col].map(region_map)
+    return df
+
+def feature_distance_from_lat_long(df):
+    from geopy.distance import geodesic
+
+    def calculate_distance(row):
+        exporter_coords = (row['exporter_latitude'], row['exporter_longitude'])
+        importer_coords = (row['importer_latitude'], row['importer_longitude'])
+        return geodesic(exporter_coords, importer_coords).kilometers
+
+    df['country_distance_km'] = df.apply(calculate_distance, axis=1)
+    return df
+
+def feature_product_category(df, hs_col='hs2', category_map=PRODUCT_CATEGORIES):
+    df['product_category'] = df[hs_col].map(category_map)
+    return df
+
+def feature_gdp_per_capita(df):
+    df['exporter_gdp_per_capita'] = df['exporter_gdp'] / df['exporter_population']
+    df['importer_gdp_per_capita'] = df['importer_gdp'] / df['importer_population']
+    return df
+
+def feature_trade_per_gdp(df):
+    df['trade_value_per_exporter_gdp_usd'] = df['trade_value_usd'] / df['exporter_gdp_usd']
+    df['trade_value_per_importer_gdp_usd'] = df['trade_value_usd'] / df['importer_gdp_usd']
     return df

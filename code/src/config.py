@@ -156,9 +156,61 @@ COUNTRIES_REGIONS_WB = {
 
 COUNTRIES_ALT = {
     "Korea, Rep.": "South Korea",
+    "Korea (the Republic of)": "South Korea",
+    "United Arab Emirates (the)": "United Arab Emirates",
+    "Russian Federation (the)": "Russia",
+    "United States of America (the)": "United States",
+    "United Kingdom of Great Britain and Northern Ireland (the)": "United Kingdom",
     "Egypt, Arab Rep.": "Egypt",
     "Kyrgyz Republic": "Kyrgyzstan",
     "Turkiye": "Turkey",
     "Russian Federation": "Russia",
     "Slovak Republic": "Slovakia"
+}
+
+
+# https://raw.githubusercontent.com/google/dspl/master/samples/google/canonical/countries.csv
+# https://www.ewf.uni-bayreuth.de/en/research/RTA-data/index.html
+
+PRODUCT_NAMES = {
+    10: "Cereals",
+    12: "Oils seeds, oleaginous fruits, grains, straw & fodder",
+    15: "Animal or vegetable fats, oils, & waxes",
+    26: "Ores, slag and ash",
+    27: "Mineral fuels, mineral oils and products of their distillation",
+    29: "Organic chemicals",
+    31: "Fertilizers",
+    39: "Plastics and articles thereof",
+    71: "Precious stones, metals, and pearls",
+    72: "Iron and steel",
+    73: "Iron/Steel articles",
+    75: "Nickel articles",
+    76: "Aluminum articles",
+    81: "Cermet articles",
+    84: "Machinery, mechanical appliances, and parts",
+    85: "Electrical machinery and electronics",
+    87: "Cars, tractors, trucks and parts thereof",
+    88: "Aircraft and Spacecraft",
+    90: "Optical, photo, and film equipment; medical instruments"
+}
+
+# 1. Agricultural
+AGRICULTURAL_HS2_CODES = [10, 12, 15]
+
+# 2. Minerals, Energy & Metals
+MINERALS_HS2_CODES = [26, 27]
+METALS_HS2_CODES = [71, 72, 73, 75, 76, 81]
+
+# 3. Chemicals & Intermediate Inputs
+CHEMICALS_HS2_CODES = [29, 31]  # 29 = organic chemicals, 31 = fertilizers
+
+# 4. Manufactured Goods (Machinery, Electronics, Vehicles, Aircraft, etc.)
+MANUFACTURED_HS2_CODES = [39, 84, 85, 87, 88, 90]
+
+PRODUCT_CATEGORIES = {
+    **{code: "Agricultural" for code in AGRICULTURAL_HS2_CODES},
+    **{code: "Minerals" for code in MINERALS_HS2_CODES},
+    **{code: "Metals" for code in METALS_HS2_CODES},
+    **{code: "Chemicals" for code in CHEMICALS_HS2_CODES},
+    **{code: "Manufactured" for code in MANUFACTURED_HS2_CODES},
 }

@@ -90,3 +90,73 @@ def merge_population(trade_df, population_df):
         on=['importer_name', 'year'],
         how='left'
     )
+
+def merge_lat_long(trade_df, lat_long_df):
+    return trade_df.merge(
+        lat_long_df[['country name', 'latitude', 'longitude']].rename(columns={
+            'country name': 'exporter_name',
+            'latitude': 'exporter_latitude',
+            'longitude': 'exporter_longitude'
+        }),
+        on='exporter_name',
+        how='left'
+    ).merge(
+        lat_long_df[['country name', 'latitude', 'longitude']].rename(columns={
+            'country name': 'importer_name',
+            'latitude': 'importer_latitude',
+            'longitude': 'importer_longitude'
+        }),
+        on='importer_name',
+        how='left'
+    )
+
+def merge_logistics_index_old(trade_df, logistics_df):
+    return trade_df.merge(
+        logistics_df[['country name', 'year', 'logistics_index']].rename(columns={
+            'country name': 'exporter_name',
+            'logistics_index': 'exporter_logistics_index'
+        }),
+        on=['exporter_name', 'year'],
+        how='left'
+    ).merge(
+        logistics_df[['country name', 'year', 'logistics_index']].rename(columns={
+            'country name': 'importer_name',
+            'logistics_index': 'importer_logistics_index'
+        }),
+        on=['importer_name', 'year'],
+        how='left'
+    )
+
+def merge_logistics_index(trade_df, logistics_df):    
+    # Keep only the necessary columns
+    logistics_subset = logistics_df[['country name', 'year', 'logistics_index']].rename(
+        columns={'country name': 'country', 'logistics_index': 'logistics_index'}
+    )
+    
+    # Merge exporter logistics
+    trade_df = trade_df.merge(
+        logistics_subset.rename(columns={'country': 'exporter_name', 'logistics_index': 'exporter_logistics_index'}),
+        on=['exporter_name', 'year'],
+        how='left'
+    )
+    
+    # Merge importer logistics
+    trade_df = trade_df.merge(
+        logistics_subset.rename(columns={'country': 'importer_name', 'logistics_index': 'importer_logistics_index'}),
+        on=['importer_name', 'year'],
+        how='left'
+    )
+    
+    return trade_df
+
+
+
+def merge_rta(trade_df, rta_df):
+    rta_cols = ['exporter_name', 'importer_name', 'year', 
+                'rta', 'cu', 'fta', 'psa', 'eia', 'cueia', 'ftaeia', 'psaeia']
+    
+    return trade_df.merge(
+        rta_df[rta_cols],
+        on=['exporter_name', 'importer_name', 'year'],
+        how='left'
+    )

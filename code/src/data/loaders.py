@@ -56,3 +56,22 @@ def load_population_data():
         "population",
         skiprows=4
     )
+
+def load_lat_long_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "countries.csv",
+        "lat_long"
+    )
+
+def load_logistics_index_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "Logistics_Index.csv",
+        "logistics_index",
+        skiprows=4
+    )
+
+def load_rta_data():
+    return load_csv_pipeline(
+        GOOGLE_DRIVE / "raw" / "rta.csv",
+        "rta"
+    )

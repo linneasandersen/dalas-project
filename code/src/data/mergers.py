@@ -6,6 +6,11 @@ def merge_temp_change(primary_df, temp_df):
     Merge temperature change data for both exporter and importer countries
     into the primary trade dataframe.
     """
+    # if importer_country_temp_change and exporter_country_temp_change columns already exist, delete them
+    for col in ['exporter_country_temp_change', 'exporter_country_temp_change_std',
+                'importer_country_temp_change', 'importer_country_temp_change_std']:
+        if col in primary_df.columns:
+            primary_df = primary_df.drop(columns=[col])
 
     # Merge exporter temp change
     merged = primary_df.merge(

@@ -103,3 +103,25 @@ def feature_trade_per_gdp(df):
     df['trade_value_per_exporter_gdp_usd'] = df['trade_value_usd'] / df['exporter_gdp_usd']
     df['trade_value_per_importer_gdp_usd'] = df['trade_value_usd'] / df['importer_gdp_usd']
     return df
+
+def feature_same_region(df, exporter_region_col='exporter_region', importer_region_col='importer_region'):
+    df['same_region'] = np.where(df[exporter_region_col] == df[importer_region_col], 1, 0)
+    return df
+
+def feature_relative_population(df):
+    df['population_exporter/importer'] = df['exporter_population'] / df['importer_population']
+    return df
+
+def feature_relative_gdp(df):
+    df['gdp_exporter/importer'] = df['exporter_gdp_usd'] / df['importer_gdp_usd']
+    return df
+
+def feature_logistics_gap(df):
+    df['logistics_index_gap'] = df['exporter_logistics_index'] - df['importer_logistics_index']
+    return df
+
+def feature_any_trade_agreement(df):
+    df['any_trade_agreement'] = (
+        df[['rta','fta','cu','psa','eia']].max(axis=1)
+    )
+    return df

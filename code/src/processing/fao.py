@@ -1,10 +1,16 @@
+from itertools import count
 import pandas as pd
 from src.processing.functions import filter_data
-from src.config import COUNTRIES, YEARS, GOOGLE_DRIVE
+from src.config import COUNTRIES, YEARS, GOOGLE_DRIVE, COUNTRIES_ALT
 
 def process_temp_change(df):
+    # rename countries based on COUNTRIES_ALT
+    df['area'] = df['area'].replace(COUNTRIES_ALT)
+    
     filtered_df = filter_data(df, 'area', COUNTRIES)
     filtered_df = filter_data(filtered_df, 'year', YEARS)
+
+    assert len(filtered_df['area'].unique()) == len(COUNTRIES), "Not all countries are present after filtering."
 
     # process std deviation and temperature change here
     pivoted_df = filtered_df.pivot_table(

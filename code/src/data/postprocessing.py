@@ -1,6 +1,13 @@
 import pandas as pd
 
 def rename_columns_with_units(df):
+
+    # drop temp change columns if they exist
+    for col in ['exporter_temp_change_c', 'exporter_temp_change_std_c',
+                'importer_temp_change_c', 'importer_temp_change_std_c']:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
     rename_dict = {
         'value': 'trade_value_usd',
         'quantity': 'trade_quantity',

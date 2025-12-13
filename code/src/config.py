@@ -157,13 +157,17 @@ COUNTRIES_REGIONS_WB = {
 COUNTRIES_ALT = {
     "Korea, Rep.": "South Korea",
     "Korea (the Republic of)": "South Korea",
+    "Republic of Korea": "South Korea",
     "United Arab Emirates (the)": "United Arab Emirates",
     "Russian Federation (the)": "Russia",
     "United States of America (the)": "United States",
+    "United States of America": "United States",
     "United Kingdom of Great Britain and Northern Ireland (the)": "United Kingdom",
+    "United Kingdom of Great Britain and Northern Ireland": "United Kingdom",
     "Egypt, Arab Rep.": "Egypt",
     "Kyrgyz Republic": "Kyrgyzstan",
     "Turkiye": "Turkey",
+    "Türkiye": "Turkey",
     "Russian Federation": "Russia",
     "Slovak Republic": "Slovakia"
 }

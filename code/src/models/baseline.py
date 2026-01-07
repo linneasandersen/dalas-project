@@ -28,16 +28,19 @@ def compute_mape_smape(y_true, y_pred):
 # Baseline model
 # ---------------------------------------------------
 
-def baseline_model_OLS(train_df, val_df, feature_cols, target_col='value', log_transform=True):
-    lagged_features = [col for col in feature_cols if '_lag_' in col]
-
-    print(f"Training before removing NaNs: {len(train_df)} rows")
-    print(f"Validation before removing NaNs: {len(val_df)} rows")
+def baseline_model_OLS(train_df, val_df, feature_cols, target_col='trade_value_usd', log_transform=True):
+    lagged_features = [col for col in feature_cols if '_t-' in col]
 
     train_clean = train_df.dropna(subset=lagged_features).copy()
     val_clean = val_df.dropna(subset=lagged_features).copy()
 
     print(f"Training on {len(train_clean)} rows, validating on {len(val_clean)} rows")
+
+    # print loss of data in percent after cleaning
+    train_loss_pct = 100 * (1 - len(train_clean) / len(train_df))
+    val_loss_pct = 100 * (1 - len(val_clean) / len(val_df))
+    print(f"Training data loss after cleaning: {train_loss_pct:.2f}%")
+    print(f"Validation data loss after cleaning: {val_loss_pct:.2f}%")
 
     if log_transform:
         train_clean.loc[:, target_col + '_log'] = np.log1p(train_clean[target_col])

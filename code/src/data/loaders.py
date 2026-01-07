@@ -2,6 +2,7 @@ import pandas as pd
 from src.config import GOOGLE_DRIVE
 from src.processing.clean import clean_all
 from src.processing.pipelines import process_dataframe
+import os
 
 # ---------------------------------------------------
 # Generic helper
@@ -75,3 +76,31 @@ def load_rta_data():
         GOOGLE_DRIVE / "raw" / "rta.csv",
         "rta"
     )
+
+def load_merged_data(load_latest=False):
+    merged_dir = GOOGLE_DRIVE / "processed" / "merged"
+    if load_latest:
+        # find most recent file in directory
+        files = os.listdir(merged_dir)
+        csv_files = [f for f in files if f.endswith('.csv')]
+        latest_file = max(csv_files, key=lambda x: os.path.getctime(os.path.join(merged_dir, x)))
+        print(f"Loading latest merged data file: {latest_file}")
+        merged_df = pd.read_csv(
+            merged_dir / latest_file,
+            engine='python'
+        )
+    else:
+        merged_df = pd.read_csv(merged_dir / "oec_trade_with_temp_change.csv")
+    return merged_df
+
+def load_lagged_data(load_latest=False, filename=None):
+    lagged_dir = GOOGLE_DRIVE / "processed" / "merged" / "lagged"
+    if load_latest:
+        # find most recent file in directory
+        files = os.listdir(lagged_dir)
+        csv_files = [f for f in files if f.endswith('.csv')]
+        latest_file = max(csv_files, key=lambda x: os.path.getctime(os.path.join(lagged_dir, x)))
+        lagged_df = pd.read_csv(lagged_dir / latest_file)
+    else:
+        lagged_df = pd.read_csv(lagged_dir / filename)
+    return lagged_df

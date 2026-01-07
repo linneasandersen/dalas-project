@@ -31,7 +31,8 @@ from src.data.loaders import (
     load_land_area,
     load_population_data,
     load_lat_long_data,
-    load_rta_data
+    load_rta_data,
+    load_merged_data
 )
 
 from src.data.mergers import (
@@ -48,9 +49,8 @@ from src.data.mergers import (
 from src.data.features import (
     encode_hs2,
     feature_distance_from_lat_long,
+    feature_political_events,
     feature_trade_per_gdp,
-    panel_train_val_test_split,
-    rolling_panel_split,
     engineer_lagged_features,
     feature_regions_from_countries,
     feature_product_category,
@@ -59,7 +59,9 @@ from src.data.features import (
     feature_relative_population,
     feature_relative_gdp,
     feature_logistics_gap,
-    feature_any_trade_agreement
+    feature_any_trade_agreement,
+    feature_top10_percent_trade,
+    feature_trade_volatility,
 )
 
 from src.models.baseline import baseline_model_OLS
@@ -117,24 +119,6 @@ def describe_df(df):
     print("\nExporter Counts:")
     print(df['exporter_name'].value_counts())
 
-def load_merged_data(load_latest=False):
-    merged_dir = GOOGLE_DRIVE / "processed" / "merged"
-    if load_latest:
-        # find most recent file in directory
-        import os
-        files = os.listdir(merged_dir)
-        csv_files = [f for f in files if f.endswith('.csv')]
-        latest_file = max(csv_files, key=lambda x: os.path.getctime(os.path.join(merged_dir, x)))
-        merged_df = pd.read_csv(merged_dir / latest_file)
-    else:
-        merged_df = pd.read_csv(merged_dir / "oec_trade_with_temp_change.csv")
-    return merged_df
-
-def load_lagged_data():
-    merged_dir = GOOGLE_DRIVE / "processed" / "merged"
-    lagged_df = pd.read_csv(merged_dir / "oec_trade_lagged.csv")
-    return lagged_df
-
 
 # ---------------------------------------------------
 # 2. Configure which steps should run
@@ -169,6 +153,9 @@ PIPELINE_CONFIG = {
     "engineer_features_distance_prodcat_gdppercap": False,
     "engineer_features_trade_per_gdp": False,
     "engineer_dummy_and_ratio_features": False,
+    "engineer_features_volatility_top10pct": False,
+    "engineer_features_same_region": False,
+    "engineer_features_political": False,
     "engineer_lagged_features": False,
     "train_baseline": False,
     "rename_columns": False,
@@ -377,6 +364,28 @@ def build():
         print(feature_df.head().to_string()) 
         print(feature_df.columns)
         save_df(feature_df, "data_more_features", MERGED_DIR)
+    
+    if PIPELINE_CONFIG["engineer_features_volatility_top10pct"]:
+        df = load_merged_data(load_latest=True)
+        feature_df = feature_top10_percent_trade(df)
+        feature_df = feature_trade_volatility(feature_df)
+        print(feature_df.head().to_string()) 
+        print(feature_df.columns)
+        save_df(feature_df, "data_more_features2", MERGED_DIR)
+
+    if PIPELINE_CONFIG["engineer_features_same_region"]:
+        df = load_merged_data(load_latest=True)
+        feature_df = feature_same_region(df)
+        print(feature_df.head().to_string()) 
+        print(feature_df.columns)
+        save_df(feature_df, "data_more_features3", MERGED_DIR)
+    
+    if PIPELINE_CONFIG["engineer_features_political"]:
+        df = load_merged_data(load_latest=True)
+        feature_df = feature_political_events(df)
+        print(feature_df.head().to_string()) 
+        print(feature_df.columns)
+        save_df(feature_df, "data_more_features4", MERGED_DIR)
 
     if PIPELINE_CONFIG["rename_columns"]:
         from src.data.postprocessing import rename_columns_with_units

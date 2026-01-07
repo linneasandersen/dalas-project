@@ -18,58 +18,23 @@ def encode_hs2(df, hs_col='hs2', drop_original=True):
 
 
 # ---------------------------------------------------
-# Panel splits
-# ---------------------------------------------------
-
-def panel_train_val_test_split(df, time_col='year', last_test_year=2023, val_years=2):
-    df = df.sort_values(time_col).reset_index(drop=True)
-
-    test_df = df[df[time_col] == last_test_year]
-
-    val_years_range = range(last_test_year - val_years, last_test_year)
-    val_df = df[df[time_col].isin(val_years_range)]
-
-    train_df = df[~df[time_col].isin(list(val_years_range) + [last_test_year])]
-
-    return train_df, val_df, test_df
-
-
-def rolling_panel_split(df, time_col='year', last_test_year=2023, initial_train_years=10, val_window=1):
-    df = df.sort_values(time_col).reset_index(drop=True)
-
-    test_df = df[df[time_col] == last_test_year]
-    train_val_df = df[df[time_col] < last_test_year]
-
-    years = sorted(train_val_df[time_col].unique())
-
-    splits = []
-    start_idx = 0
-    while start_idx + initial_train_years + val_window <= len(years):
-        train_years = years[start_idx:start_idx + initial_train_years]
-        val_years = years[start_idx + initial_train_years : start_idx + initial_train_years + val_window]
-
-        train_df = train_val_df[train_val_df[time_col].isin(train_years)]
-        val_df = train_val_df[train_val_df[time_col].isin(val_years)]
-
-        splits.append((train_df, val_df))
-        start_idx += 1
-
-    return splits, test_df
-
-
-# ---------------------------------------------------
 # Lagged features
 # ---------------------------------------------------
 
-def engineer_lagged_features(df, group_cols, time_col='year', feature_cols=['value'], lags=[1,2,3]):
+def engineer_lagged_features(df, group_cols, time_col='year', feature_cols=['value'], lags=[1, 2, 3]):
     df = df.sort_values(group_cols + [time_col])
 
     for feature in feature_cols:
         for lag in lags:
-            lagged_col_name = f"{feature}_lag_{lag}"
-            df[lagged_col_name] = df.groupby(group_cols)[feature].shift(lag)
+            # Create lagged column name: feature_t-1, feature_t-2, ...
+            lagged_col_name = f"{feature}_t-{lag}"
+            df[lagged_col_name] = (
+                df.groupby(group_cols)[feature]
+                  .shift(lag)
+            )
 
     return df
+
 
 # ---------------------------------------------------
 # Other features
@@ -125,3 +90,42 @@ def feature_any_trade_agreement(df):
         df[['rta','fta','cu','psa','eia']].max(axis=1)
     )
     return df
+
+def feature_political_events(df):
+     # COVID period (2020–2021)
+    df['covid_period'] = (df['year'].between(2020, 2021)).astype(int)
+
+    # Russia–Ukraine war period (2022 onward)
+    df['war_period'] = (df['year'] >= 2022).astype(int)
+    df['russia_sanctions'] = (df['year'] >= 2014).astype(int)
+
+    df['industrial_commodity_slowdown'] = df['year'].between(2014, 2016).astype(int)
+
+    return df
+
+
+def feature_top10_percent_trade(df):
+    trade_threshold = df['trade_value_usd'].quantile(0.9)
+    df['top10_percent_trade'] = np.where(df['trade_value_usd'] >= trade_threshold, 1, 0)
+    return df
+
+def feature_trade_volatility(df, group_cols=['exporter_name', 'importer_name', 'hs2'], time_col='year', window=3):
+    df = df.sort_values(group_cols + [time_col])
+    df['trade_value_usd_volatility'] = (
+        df.groupby(group_cols)['trade_value_usd']
+          .rolling(window=window)
+          .std()
+          .reset_index(level=group_cols, drop=True)
+    )
+    return df
+
+def feature_log_transform(df, features):
+    for feature in features:
+        if feature in df.columns:
+            # Handle negatives
+            if (df[feature] < 0).any():
+                print(f"Warning: Negative values found in {feature}. Clipping to 0 for log transform.")
+                df[feature] = df[feature].clip(lower=0)
+            df[f"{feature}_log"] = np.log1p(df[feature])
+    return df
+

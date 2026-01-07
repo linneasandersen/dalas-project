@@ -178,8 +178,8 @@ COUNTRIES_ALT = {
 
 PRODUCT_NAMES = {
     10: "Cereals",
-    12: "Oils seeds, oleaginous fruits, grains, straw & fodder",
-    15: "Animal or vegetable fats, oils, & waxes",
+    12: "Oils seeds, oleaginous fruits, grains, straw and fodder",
+    15: "Animal or vegetable fats, oils, and waxes",
     26: "Ores, slag and ash",
     27: "Mineral fuels, mineral oils and products of their distillation",
     29: "Organic chemicals",
@@ -197,6 +197,29 @@ PRODUCT_NAMES = {
     88: "Aircraft and Spacecraft",
     90: "Optical, photo, and film equipment; medical instruments"
 }
+
+PRODUCT_NAMES_SHORT = {
+    10: "Cereals",
+    12: "Oils seeds",
+    15: "Animal or vegetable fats",
+    26: "Ores, slag and ash",
+    27: "Mineral fuels and oils",
+    29: "Organic chemicals",
+    31: "Fertilizers",
+    39: "Plastics",
+    71: "Precious stones, metals, and pearls",
+    72: "Iron and steel",
+    73: "Iron/steel articles",
+    75: "Nickel articles",
+    76: "Aluminum articles",
+    81: "Cermet articles",
+    84: "Machinery, mechanical",
+    85: "Electrical machinery, and electronics",
+    87: "Cars, tractors, and trucks",
+    88: "Aircraft and spacecraft",
+    90: "Medical instruments"
+}
+
 
 # 1. Agricultural
 AGRICULTURAL_HS2_CODES = [10, 12, 15]
@@ -217,4 +240,27 @@ PRODUCT_CATEGORIES = {
     **{code: "Metals" for code in METALS_HS2_CODES},
     **{code: "Chemicals" for code in CHEMICALS_HS2_CODES},
     **{code: "Manufactured" for code in MANUFACTURED_HS2_CODES},
+}
+
+
+PRODUCT_PALETTE = {
+    10: {"tertiary": "#FFF176", "secondary": "#FFECB3", "primary": "#F9A825"},  # Cereals
+    12: {"tertiary": "#81C784", "secondary": "#C8E6C9", "primary": "#2E7D32"},  # Seeds
+    15: {"tertiary": "#FFB74D", "secondary": "#FFE0B2", "primary": "#E65100"},  # Fats
+    26: {"tertiary": "#B0BEC5", "secondary": "#ECEFF1", "primary": "#6AA9C8"},  # Ores
+    27: {"tertiary": "#9E9E9E", "secondary": "#E0E0E0", "primary": "#212121"},  # Fuels
+    29: {"tertiary": "#BA68C8", "secondary": "#E1BEE7", "primary": "#6A1B9A"},  # Organics
+    31: {"tertiary": "#4DB6AC", "secondary": "#B2DFDB", "primary": "#00695C"},  # Fertilizers
+    39: {"tertiary": "#FF8A65", "secondary": "#FFCCBC", "primary": "#D84315"},  # Plastics
+    71: {"tertiary": "#FFE066", "secondary": "#FFF9C4", "primary": "#FFB300"},  # Precious
+    72: {"tertiary": "#78909C", "secondary": "#CFD8DC", "primary": "#263238"},  # Iron/Steel
+    73: {"tertiary": "#90A4AE", "secondary": "#ECEFF1", "primary": "#37474F"},  # Iron Art.
+    75: {"tertiary": "#BCAAA4", "secondary": "#D7CCC8", "primary": "#5D4037"},  # Nickel
+    76: {"tertiary": "#CFD8DC", "secondary": "#F5F5F5", "primary": "#607D8B"},  # Aluminum
+    81: {"tertiary": "#78909C", "secondary": "#ECEFF1", "primary": "#263238"},  # Cermet
+    84: {"tertiary": "#64B5F6", "secondary": "#BBDEFB", "primary": "#0D47A1"},  # Machinery
+    85: {"tertiary": "#4DD0E1", "secondary": "#B2EBF2", "primary": "#006064"},  # Electronics
+    87: {"tertiary": "#EF5350", "secondary": "#FFCDD2", "primary": "#B71C1C"},  # Vehicles
+    88: {"tertiary": "#42A5F5", "secondary": "#BBDEFB", "primary": "#0D47A1"},  # Aircraft
+    90: {"tertiary": "#26A69A", "secondary": "#B2DFDB", "primary": "#004D40"}   # Optical
 }

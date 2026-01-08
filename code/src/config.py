@@ -18,6 +18,8 @@ LOCAL_DIR = Path(__file__).parent.parent.parent.parent / "dalas-data"
 RAW_DIR_EN = GOOGLE_DRIVE_EN / "raw"
 PROCESSED_DIR_EN = GOOGLE_DRIVE_EN / "processed"
 MERGED_DIR = PROCESSED_DIR / "merged"
+EDA_DIR = PROCESSED_DIR / "eda"
+LAGGED_DIR = PROCESSED_DIR / "train"
 
 YEARS = range(2010, 2024)
 HS2_CODES = [10, 12, 15, 26, 27, 29, 31, 39, 71, 72, 73, 75, 76, 81, 84, 85, 87, 88, 90]

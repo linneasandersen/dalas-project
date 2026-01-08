@@ -1,5 +1,5 @@
 import pandas as pd
-from src.config import GOOGLE_DRIVE
+from src.config import GOOGLE_DRIVE, LAGGED_DIR
 from src.processing.clean import clean_all
 from src.processing.pipelines import process_dataframe
 import os
@@ -93,14 +93,21 @@ def load_merged_data(load_latest=False):
         merged_df = pd.read_csv(merged_dir / "oec_trade_with_temp_change.csv")
     return merged_df
 
-def load_lagged_data(load_latest=False, filename=None):
-    lagged_dir = GOOGLE_DRIVE / "processed" / "merged" / "lagged"
-    if load_latest:
-        # find most recent file in directory
-        files = os.listdir(lagged_dir)
-        csv_files = [f for f in files if f.endswith('.csv')]
-        latest_file = max(csv_files, key=lambda x: os.path.getctime(os.path.join(lagged_dir, x)))
-        lagged_df = pd.read_csv(lagged_dir / latest_file)
-    else:
-        lagged_df = pd.read_csv(lagged_dir / filename)
-    return lagged_df
+def load_latest_eda_data():
+    eda_dir = GOOGLE_DRIVE / "processed" / "eda"
+    # find most recent file in directory
+    files = os.listdir(eda_dir)
+    csv_files = [f for f in files if f.endswith('.csv')]
+    latest_file = max(csv_files, key=lambda x: os.path.getctime(os.path.join(eda_dir, x)))
+    print(f"Loading latest eda data file: {latest_file}")
+    eda_df = pd.read_csv(
+        eda_dir / latest_file,
+        engine='python'
+    )
+    return eda_df
+
+
+def load_lagged_data(number_of_lags: int) -> pd.DataFrame:
+    filename = f"data_lagged_{number_of_lags}.csv"
+    training_df = pd.read_csv(LAGGED_DIR / filename)
+    return training_df

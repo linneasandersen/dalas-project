@@ -4,25 +4,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
-
-# ---------------------------------------------------
-# Metrics
-# ---------------------------------------------------
-
-def compute_mape_smape(y_true, y_pred):
-    y_true, y_pred = np.array(y_true), np.array(y_pred)
-
-    nonzero_mask = y_true != 0
-    mape = np.mean(
-        np.abs((y_true[nonzero_mask] - y_pred[nonzero_mask]) / y_true[nonzero_mask])
-    ) * 100
-
-    smape = np.mean(
-        2 * np.abs(y_pred - y_true) / (np.abs(y_true) + np.abs(y_pred))
-    ) * 100
-
-    return mape, smape
-
+from src.models.metrics import compute_mape_smape, evaluate
 
 # ---------------------------------------------------
 # Baseline model
@@ -33,14 +15,6 @@ def baseline_model_OLS(train_df, val_df, feature_cols, target_col='trade_value_u
 
     train_clean = train_df.dropna(subset=lagged_features).copy()
     val_clean = val_df.dropna(subset=lagged_features).copy()
-
-    print(f"Training on {len(train_clean)} rows, validating on {len(val_clean)} rows")
-
-    # print loss of data in percent after cleaning
-    train_loss_pct = 100 * (1 - len(train_clean) / len(train_df))
-    val_loss_pct = 100 * (1 - len(val_clean) / len(val_df))
-    print(f"Training data loss after cleaning: {train_loss_pct:.2f}%")
-    print(f"Validation data loss after cleaning: {val_loss_pct:.2f}%")
 
     if log_transform:
         train_clean.loc[:, target_col + '_log'] = np.log1p(train_clean[target_col])
@@ -63,22 +37,12 @@ def baseline_model_OLS(train_df, val_df, feature_cols, target_col='trade_value_u
 
     pipeline.fit(train_clean[feature_cols_used], train_clean[target_col_used])
 
+    MAX_LOG = 700  # float64 limit is ~709
+
     val_preds_log = pipeline.predict(val_clean[feature_cols_used])
-    val_preds = np.expm1(val_preds_log) if log_transform else val_preds_log
+    val_preds_log_clipped = np.clip(val_preds_log, None, MAX_LOG)
+    val_preds = np.expm1(val_preds_log_clipped) if log_transform else val_preds_log_clipped
 
-    rmse = np.sqrt(mean_squared_error(val_clean[target_col], val_preds))
-    rmse_log = np.sqrt(mean_squared_error(
-        val_clean[target_col + "_log"], val_preds_log
-    ))
+    metrics = evaluate(val_clean[target_col], val_preds)
 
-    mape, smape = compute_mape_smape(val_clean[target_col], val_preds)
-
-    print(f"MAPE: {mape:.2f}%")
-    print(f"SMAPE: {smape:.2f}%")
-    print(f"RMSE: {rmse}")
-    print(f"RMSE (log): {rmse_log}")
-
-    factor_error = np.expm1(rmse_log) + 1
-    print(f"Avg factor error ~{factor_error:.2f}x")
-
-    return pipeline, rmse
+    return pipeline, metrics

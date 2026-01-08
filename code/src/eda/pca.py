@@ -19,7 +19,7 @@ def plot_pca_biplot(df, features, color_col=None, title="PCA"):
 
     # 1. Subset and Clean Data
     # We combine features + color_col to drop NaNs together
-    cols_to_use = features + ([color_col] if color_col else [])
+    cols_to_use = features + ([color_col] if color_col else []) + ['exporter_name', 'year']
     df_pca = df[cols_to_use].dropna().copy()
     
     # 2. Standardize the Features (Crucial for PCA)
@@ -85,7 +85,13 @@ def plot_pca_biplot(df, features, color_col=None, title="PCA"):
     
     plt.tight_layout()
     plt.show()
+    
+    # return a df with exporter_name, pc1, pc2
+    df_with_pcs = df_pca.copy()
+    df_with_pcs['PC1'] = pc_df['PC1'].values
+    df_with_pcs['PC2'] = pc_df['PC2'].values
 
+    return df_with_pcs
 
 import pandas as pd
 import numpy as np
@@ -126,7 +132,13 @@ def plot_hs2_pca_colored(df):
         df_with_hist[['hist_prod_value', 'hist_prod_volatility', 'hist_prod_distance']].fillna(0)
 
     # --- 2. PREPARE PRODUCT SPACE FOR PLOTTING ---
-    # For the plot, we want ONE row per product, using their overall historical profile
+    # For the plot, we want ONE row per product PER YEAR, using their overall historical profile
+    # product_stats = df_with_hist.groupby(['year', 'hs2']).agg({
+    #     'hist_prod_value': 'mean',
+    #     'hist_prod_volatility': 'mean',
+    #     'hist_prod_distance': 'mean',
+    #     'product_category': 'first'
+    # })
     product_stats = df_with_hist.groupby('hs2').agg({
         'hist_prod_value': 'mean',
         'hist_prod_volatility': 'mean',
@@ -258,7 +270,7 @@ def plot_hs2_pca_colored(df):
     ax.add_artist(leg1)
     ax.legend(handles=category_handles, title='Category', bbox_to_anchor=(1.02, 0.4), loc='upper left')
 
-    plt.title("Product Space Clusters (face=color=cluster, edge=color=category)")
+    plt.title("Product Space Clusters")
     plt.xlabel(f"PC1 ({pca_prod.explained_variance_ratio_[0]:.1%} Variance)")
     plt.ylabel(f"PC2 ({pca_prod.explained_variance_ratio_[1]:.1%} Variance)")
     plt.tight_layout()
@@ -269,16 +281,9 @@ def plot_hs2_pca_colored(df):
     for _, row in product_stats.iterrows():
         print(f"HS2 Code {row['hs2']} ({PRODUCT_NAMES_SHORT.get(row['hs2'], 'Unknown')}): Cluster {row['cluster']}")    
     
-    df_with_cluster = df_with_hist.merge(
-        product_stats[['hs2', 'cluster']], on='hs2', how='left'
-    )
+    cluster_mapping = product_stats[['hs2', 'cluster']]
 
-    # add also PC1 and PC2 to the main dataframe for potential use
-    df_with_cluster = df_with_cluster.merge(
-        product_stats[['hs2', 'PC1', 'PC2']], on='hs2', how='left'
-    )
-
-    return df_with_cluster # Return this for your prediction model
+    return cluster_mapping 
 
 
 

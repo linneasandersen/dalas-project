@@ -1,5 +1,7 @@
 
+from src.utils.io import save_df
 from src.data.features import feature_log_transform
+from src.data.loaders import load_latest_eda_data
 from src.config import AGRICULTURAL_HS2_CODES, GOOGLE_DRIVE, MINERALS_HS2_CODES, MANUFACTURED_HS2_CODES, METALS_HS2_CODES, CHEMICALS_HS2_CODES
 from src.eda.sanity_check import check_sanity
 from src.eda.trade_value import countries_centered_plot, cumulative_share_plot, cumulative_share_plot_percent, histogram_trade_value_by_product_log_x, histogram_trade_values, histogram_trade_values_log_x, histogram_trade_value_by_product, trade_over_time, trade_over_time_products
@@ -14,9 +16,10 @@ PIPELINE_CONFIG = {
     "trade_value_histograms": False,
     "trade_value": False,
     "boxplots": False,
-    "correlation_matrix": False,
     "anova": False,
     "pca_biplot": False,
+    "correlation_matrix": False,
+    "return_df": True,
 }
 
 # ---------------------------------------------------
@@ -24,8 +27,7 @@ PIPELINE_CONFIG = {
 # ---------------------------------------------------
 
 def explore(df):
-    processed_dir = GOOGLE_DRIVE / "processed"
-    return_df = None
+    processed_dir = GOOGLE_DRIVE / "processed" / "eda"
 
     if PIPELINE_CONFIG["sanity_check"]:
         check_sanity(df)
@@ -52,51 +54,6 @@ def explore(df):
         #boxplot_trade_value_by_product(df, log=True)
         boxplot_trade_value_all(df, log=False)
         boxplot_trade_value_all(df, log=True)
-    
-    
-    if PIPELINE_CONFIG["correlation_matrix"]:
-        gravity_features = [
-            'trade_value_usd',            # Target
-            'exporter_gdp_usd',           # Economic Mass
-            'importer_gdp_usd',
-            'exporter_population',        # Human Mass
-            'importer_population',
-            'exporter_land_area_km2',     # Physical Size
-            'importer_land_area_km2',
-            'countries_distance_km',      # Distance constraint
-            'same_region',                # Geographic grouping
-            'top10_percent_trade'         # Is this a "Major" trade partner?
-        ]
-        plot_correlation_heatmap(df, gravity_features, title="Correlation Matrix of Trade Features", log=True)
-
-        efficiency_features = [
-            'trade_value_usd',                  # Target
-            'exporter_gdp_per_capita_usd',      # Wealth/Development
-            'importer_gdp_per_capita_usd',
-            'exporter_logistics_index',         # Infrastructure Quality
-            'importer_logistics_index',
-            'logistics_index_gap',              # The infrastructure "distance"
-            'exporter_temp_change_c',           # Climate Stability
-            'importer_temp_change_c',
-            'trade_value_usd_volatility',       # Economic Stability
-            'gdp_exporter/importer',            # Imbalance Ratios
-            'population_exporter/importer'
-        ]
-        plot_correlation_heatmap(df, efficiency_features, title="Correlation Matrix of Trade Efficiency Features", log=True)
-
-        features2 = [
-            'trade_value_usd',
-            'any_trade_agreement',
-            'cu',
-            'fta',
-            'psa',
-            'eia',
-            'cueia',
-            'ftaeia',
-            'psaeia',
-        ]
-        #plot_correlation_heatmap(df, features2, title="Correlation Matrix of Trade Agreements", log=True)
-
     
     if PIPELINE_CONFIG["anova"]:
         test_categorical_relevance(df, 'exporter_name')
@@ -151,6 +108,104 @@ def explore(df):
         ]
 
         # Run the function
-        # plot_pca_biplot(df, features=pca_features, color_col='exporter_region')
-        df_cluster = plot_hs2_pca_colored(df)
-        print(df_cluster.columns)
+        df_country_pca = plot_pca_biplot(df, features=pca_features, color_col='exporter_region')
+        print(df_country_pca[['PC1', 'PC2', 'exporter_name', 'year']].head(100))
+
+        cluster_mapping = plot_hs2_pca_colored(df[df['year'].between(2010, 2020)])
+
+        # Make sure df_country_pca has one row per exporter/year
+        df_country_pca_unique = df_country_pca.groupby(['exporter_name','year']).agg({
+            'PC1':'mean',
+            'PC2':'mean'    
+        }).reset_index()
+
+        df_country_pca_unique_import = df_country_pca_unique.rename(columns={
+            'exporter_name':'importer_name',
+        })
+
+        # Merge safely
+        df_save = df.merge(
+            df_country_pca_unique,
+            on=['exporter_name','year'],
+            how='left'
+        ).rename(columns={'PC1':'pc1_exporter','PC2':'pc2_exporter'})
+
+        print(df_save.columns)
+        print(df_country_pca_unique.columns)
+
+        df_save = df_save.merge(
+            df_country_pca_unique_import,
+            on=['importer_name','year'],
+            how='left'
+        ).rename(columns={'PC1':'pc1_importer','PC2':'pc2_importer'})
+
+        print(df_save[['pc1_importer', 'pc2_importer', 'importer_name', 'year']].head(10))
+        print(df_save[['pc1_exporter', 'pc2_exporter', 'exporter_name', 'year']].head(10))
+        print(df_save[['pc1_exporter', 'pc2_exporter', 'exporter_name', 'pc1_importer', 'pc2_importer', 'importer_name', 'year']].head(10))
+
+        # merge with cluster mapping
+        df_save = df_save.merge(
+            cluster_mapping,
+            on='hs2',
+            how='left'
+        )
+
+        df_save = df_save[[col for col in df_save.columns if not col.endswith('_log')]]
+
+        # print example for year = 2023
+        print(df_save[df_save['year'] == 2023][['hs2', 'cluster']].head(20))
+
+        save_df(df_save, "data_pca_clusters", processed_dir)
+    
+    if PIPELINE_CONFIG["correlation_matrix"]:
+        # load latest file from processed/eda 
+        df_eda = load_latest_eda_data()
+
+        gravity_features = [
+            'trade_value_usd',            # Target
+            'exporter_gdp_usd',           # Economic Mass
+            'importer_gdp_usd',
+            'exporter_population',        # Human Mass
+            'importer_population',
+            'exporter_land_area_km2',     # Physical Size
+            'importer_land_area_km2',
+            'countries_distance_km',      # Distance constraint
+            'same_region',                # Geographic grouping
+            'top10_percent_trade'         # Is this a "Major" trade partner?
+        ]
+        plot_correlation_heatmap(df_eda, gravity_features, title="Correlation Matrix of Trade Features", log=True)
+
+        efficiency_features = [
+            'trade_value_usd',                  # Target
+            'exporter_gdp_per_capita_usd',      # Wealth/Development
+            'importer_gdp_per_capita_usd',
+            'exporter_logistics_index',         # Infrastructure Quality
+            'importer_logistics_index',
+            'logistics_index_gap',              # The infrastructure "distance"
+            'exporter_temp_change_c',           # Climate Stability
+            'importer_temp_change_c',
+            'trade_value_usd_volatility',       # Economic Stability
+            'gdp_exporter/importer',            # Imbalance Ratios
+            'population_exporter/importer',
+            'pc1_importer',                      # PCA Components
+            'pc2_importer',
+            'pc1_exporter',
+            'pc2_exporter',
+        ]
+        plot_correlation_heatmap(df_eda, efficiency_features, title="Correlation Matrix of Trade Efficiency Features", log=True)
+
+        features2 = [
+            'trade_value_usd',
+            'any_trade_agreement',
+            'cu',
+            'fta',
+            'psa',
+            'eia',
+            'cueia',
+            'ftaeia',
+            'psaeia',
+        ]
+        plot_correlation_heatmap(df, features2, title="Correlation Matrix of Trade Agreements", log=True)
+
+    if PIPELINE_CONFIG["return_df"]:
+        return load_latest_eda_data()

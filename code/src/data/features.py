@@ -7,8 +7,8 @@ from src.config import PRODUCT_CATEGORIES
 # Encoding
 # ---------------------------------------------------
 
-def encode_hs2(df, hs_col='hs2', drop_original=True):
-    hs_dummies = pd.get_dummies(df[hs_col], prefix=hs_col)
+def encode_hs2(df, hs_col='hs2', prefix='hs2', drop_original=True):
+    hs_dummies = pd.get_dummies(df[hs_col], prefix=prefix)
     df_encoded = pd.concat([df, hs_dummies], axis=1)
 
     if drop_original:

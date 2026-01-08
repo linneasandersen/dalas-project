@@ -77,3 +77,5 @@ def plot_correlation_heatmap(df: pd.DataFrame, features: list, title: str = "Cor
     plt.yticks(rotation=0)
     plt.tight_layout()
     plt.show()
+
+    #print("Correlation matrix:\n", corr)
